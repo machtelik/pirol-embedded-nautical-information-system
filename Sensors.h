@@ -1,54 +1,82 @@
 #pragma once
 
-#include <OneWire.h>
 #include <DHT.h>
+#include <OneWire.h>
 
-#define TEMP_HUM_SENSOR_PIN 3
-#define TEMP_PIN 5
+#define ANALOG_VALUE_TO_VOLTAGE 30  // 1 digit = 0,03V (30,0mV)
 
-#define ANALOG_VALUE_TO_VOLTAGE 30 // 1 digit = 0,03V (30,0mV)
+#define VOLTAGE_UPDATE_PERIODE 5000
+#define TEMP_HUM_UPDATE_PERIODE 5000
+#define UPTIME_UPDATE_PERIODE 5000
 
-#define INPUT_VOLATGE_PIN A0
+class VoltageSensor {
+ public:
+  VoltageSensor(int pin) : is_setup(false), pin(pin), value(0), lastUpdate(0){};
 
-class VoltageSensor
-{
-public:
-  VoltageSensor(int pin) : pin(pin), value(0){};
-  bool update()
-  {
-    int new_value = analogRead(pin);
-    new_value = new_value * ANALOG_VALUE_TO_VOLTAGE;
-    if (new_value != value)
-    {
+  void setup() {
+    if (is_setup) {
+      return;
+    }
+
+    pinMode(pin, INPUT);
+    is_setup = true;
+  }
+
+  bool update() {
+    if (!is_setup) {
+      return false;
+    }
+
+    if (millis() - lastUpdate < VOLTAGE_UPDATE_PERIODE) {
+      return;
+    }
+
+    int new_value = analogRead(pin) * ANALOG_VALUE_TO_VOLTAGE;
+    lastUpdate = millis();
+    if (new_value != value) {
       value = new_value;
       return true;
     }
     return false;
   }
 
-  int getValue()
-  {
-    return value;
-  }
+  int getValue() { return value; }
 
-private:
+ private:
+  bool is_setup;
   int pin;
   float value;
+  unsigned long lastUpdate;
 };
 
-class TempHumSensor
-{
-public:
-  TempHumSensor(int pin) : dht(pin, DHT22), temp(0.0), hum(0.0)
-  {
+class TempHumSensor {
+ public:
+  TempHumSensor(int pin)
+      : is_setup(false), dht(pin, DHT22), temp(0.0), hum(0.0), lastUpdate(0) {}
+
+  void setup() {
+    if (is_setup) {
+      return;
+    }
+
     dht.begin();
+    is_setup = true;
   }
-  bool update()
-  {
+
+  bool update() {
+    if (!is_setup) {
+      return false;
+    }
+
+    if (millis() - lastUpdate < TEMP_HUM_UPDATE_PERIODE) {
+      return;
+    }
+
     float t = dht.readTemperature();
     float h = dht.readHumidity();
-    if (t != temp || h != hum)
-    {
+    lastUpdate = millis();
+
+    if (t != temp || h != hum) {
       temp = t;
       hum = h;
       return true;
@@ -60,11 +88,31 @@ public:
   float getTemp() { return temp; }
   float getHumidity() { return hum; }
 
-private:
+ private:
+  bool is_setup;
   DHT dht;
   float temp;
   float hum;
+  unsigned long lastUpdate;
 };
 
-VoltageSensor input_voltage_sensor(INPUT_VOLATGE_PIN);
-TempHumSensor temp_hum_sensor(TEMP_HUM_SENSOR_PIN);
+class UptimeSensor {
+ public:
+  UptimeSensor() : lastUpdate(0) {}
+
+  void setup() { lastUpdate = millis(); }
+
+  bool update() {
+    if (millis() - lastUpdate < UPTIME_UPDATE_PERIODE) {
+      return false;
+    }
+
+    lastUpdate = millis();
+    return true;
+  }
+
+  int getUptime() { return lastUpdate / 1000; }
+
+ private:
+  unsigned long lastUpdate;
+};
