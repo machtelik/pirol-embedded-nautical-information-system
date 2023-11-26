@@ -1,3 +1,5 @@
+#pragma once
+
 #include <LiquidCrystal_I2C.h>
 
 #define DISPLAY_ADDRESS_0 0x22
@@ -81,16 +83,16 @@ Display displays[] = {
 
 void setupDisplays()
 {
-  for (int i = 0; i < DISPLAY_COUNT; ++i)
-  {
-    displays[i].setup();
-  }
+    for (int i = 0; i < DISPLAY_COUNT; ++i)
+    {
+        displays[i].setup();
+    }
 }
 
 void refreshDisplays()
 {
-  for (int i = 0; i < DISPLAY_COUNT; ++i)
-  {
-    displays[i].refresh();
-  }
+    for (int i = 0; i < DISPLAY_COUNT; ++i)
+    {
+        displays[i].refresh();
+    }
 }
