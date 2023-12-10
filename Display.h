@@ -22,9 +22,6 @@ class Display {
 
   void reset() {
     is_setup = false;
-
-    setup();
-    lcd.clear();
   }
 
   void setup() {

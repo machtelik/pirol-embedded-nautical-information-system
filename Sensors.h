@@ -25,13 +25,13 @@ class VoltageSensor {
     is_setup = true;
   }
 
-  bool update() {
+  bool update(bool immediate_update = false) {
     if (!is_setup) {
       return false;
     }
 
-    if (millis() - lastUpdate < VOLTAGE_UPDATE_PERIODE) {
-      return;
+    if (!immediate_update || millis() - lastUpdate < VOLTAGE_UPDATE_PERIODE) {
+      return false;
     }
 
     int new_value = analogRead(pin) * ANALOG_VALUE_TO_VOLTAGE;
@@ -72,7 +72,7 @@ class TempHumSensor {
     }
 
     if (millis() - lastUpdate < TEMP_HUM_UPDATE_PERIODE) {
-      return;
+      return false;
     }
 
     float t = dht.readTemperature();
@@ -122,19 +122,22 @@ class UptimeSensor {
 
 class TempSensors {
  public:
-  TempSensors(int pin) : lastUpdate(0), oneWire(pin), sensors(&oneWire) {
+  TempSensors(int pin) : is_setup(false), lastUpdate(0), oneWire(pin), sensors(&oneWire) {
     }
 
   void setup() { 
-  Serial.print("Locating devices...");
-  sensors.begin();
-  Serial.print("Found ");
-  Serial.print(sensors.getDeviceCount(), DEC);
-  Serial.println(" devices.");
-
+    Serial.print("Locating devices...");
+    sensors.begin();
+    Serial.print("Found ");
+    Serial.print(sensors.getDeviceCount(), DEC);
+    Serial.println(" devices.");
   }
 
   bool update() {
+    if(!is_setup) {
+      return false;
+    }
+    
     if (millis() - lastUpdate < UPTIME_UPDATE_PERIODE) {
       return false;
     }
@@ -145,6 +148,7 @@ class TempSensors {
 
 
  private:
+  bool is_setup;
   unsigned long lastUpdate;
   OneWire oneWire;
   DallasTemperature sensors;

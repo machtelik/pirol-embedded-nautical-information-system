@@ -6,8 +6,11 @@
 
 // PINs
 #define INPUT_VOLATGE_PIN A0
+#define EXTERNAL_5V_POWER_PIN A1
 #define TEMP_HUM_SENSOR_PIN 3
 #define TEMP_PIN 5
+
+#define EXTERNAL_SENSOR_VOLTAGE_HIGH 4500
 
 // i2c bus addresses
 #define DISPLAY_ADDRESS_0 0x22
@@ -21,27 +24,50 @@ Display displays[] = {Display(DISPLAY_ADDRESS_0), Display(DISPLAY_ADDRESS_1),
                       Display(DISPLAY_ADDRESS_4)};
 
 VoltageSensor input_voltage_sensor(INPUT_VOLATGE_PIN);
+VoltageSensor external_5V_voltage_sensor(EXTERNAL_5V_POWER_PIN);
 TempHumSensor temp_hum_sensor(TEMP_HUM_SENSOR_PIN);
 UptimeSensor uptime_sensor;
 TempSensors temp_sensors(TEMP_PIN);
 
-void setup() {
-  Serial.begin(9600);
+bool needs_setup = true;
 
-  // Wait a bit for everything to come up
-  delay(500);
-
-  Wire.setWireTimeout(2000, true);
-  // Switch to I2C fast mode
-  Wire.setClock(400000);
-
-  input_voltage_sensor.setup();
-  temp_hum_sensor.setup();
+void setupInternalDevices() {
+    input_voltage_sensor.setup();
+  external_5V_voltage_sensor.setup();
   uptime_sensor.setup();
+}
+
+void setupExternalDevices() {
+  temp_hum_sensor.setup();
   temp_sensors.setup();
   for (int i = 0; i < DISPLAY_COUNT; ++i) {
     displays[i].setup();
   }
+}
+
+void checkI2CState() {
+  if (!Wire.getWireTimeoutFlag()) {
+    return;
+  }
+  
+  for (int i = 0; i < DISPLAY_COUNT; ++i) {
+    displays[i].reset();
+  }
+
+  needs_setup = true;
+}
+
+void setup() {
+  Serial.begin(115200);
+
+  // Wait a bit for everything to come up
+  delay(50);
+
+  Wire.setWireTimeout(500, true);
+  // Switch to I2C fast mode
+  Wire.setClock(400000);
+
+setupInternalDevices();
 
   displays[0].setText(0, "Kuehlwasser:     / C");
   displays[0].setText(1, "Motor Gehaeuse:  / C");
@@ -66,6 +92,21 @@ void setup() {
 }
 
 void loop() {
+  // Make sure we have external power first
+  external_5V_voltage_sensor.update(true);
+  if (external_5V_voltage_sensor.getValue() < EXTERNAL_SENSOR_VOLTAGE_HIGH) {
+    needs_setup = true;
+      Serial.println("v: " + String(external_5V_voltage_sensor.getValue()) + "mV");
+
+    return;
+  }
+
+  checkI2CState();
+
+  if (needs_setup) {
+    setupExternalDevices();
+  }
+
   if (input_voltage_sensor.update()) {
     displays[2].setText(3, "Eingang: " + String(input_voltage_sensor.getValue()) + "mV");
   }
@@ -82,12 +123,5 @@ void loop() {
   // Update displays
   for (int i = 0; i < DISPLAY_COUNT; ++i) {
     displays[i].update();
-  }
-
-  if (Wire.getWireTimeoutFlag()) {
-    for (int i = 0; i < DISPLAY_COUNT; ++i) {
-      displays[i].reset();
-    }
-    Wire.clearWireTimeoutFlag();
   }
 }
