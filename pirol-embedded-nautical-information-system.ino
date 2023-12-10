@@ -23,6 +23,7 @@ Display displays[] = {Display(DISPLAY_ADDRESS_0), Display(DISPLAY_ADDRESS_1),
 VoltageSensor input_voltage_sensor(INPUT_VOLATGE_PIN);
 TempHumSensor temp_hum_sensor(TEMP_HUM_SENSOR_PIN);
 UptimeSensor uptime_sensor;
+TempSensors temp_sensors(TEMP_PIN);
 
 void setup() {
   Serial.begin(9600);
@@ -37,6 +38,7 @@ void setup() {
   input_voltage_sensor.setup();
   temp_hum_sensor.setup();
   uptime_sensor.setup();
+  temp_sensors.setup();
   for (int i = 0; i < DISPLAY_COUNT; ++i) {
     displays[i].setup();
   }
@@ -80,9 +82,6 @@ void loop() {
   // Update displays
   for (int i = 0; i < DISPLAY_COUNT; ++i) {
     displays[i].update();
-    if (Wire.getWireTimeoutFlag()) {
-      Wire.clearWireTimeoutFlag();
-    }
   }
 
   if (Wire.getWireTimeoutFlag()) {

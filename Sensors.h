@@ -2,12 +2,15 @@
 
 #include <DHT.h>
 #include <OneWire.h>
+#include <DallasTemperature.h>
 
 #define ANALOG_VALUE_TO_VOLTAGE 30  // 1 digit = 0,03V (30,0mV)
 
 #define VOLTAGE_UPDATE_PERIODE 5000
 #define TEMP_HUM_UPDATE_PERIODE 5000
 #define UPTIME_UPDATE_PERIODE 5000
+#define TEMP_UPDATE_PERIODE 5000
+
 
 class VoltageSensor {
  public:
@@ -115,4 +118,34 @@ class UptimeSensor {
 
  private:
   unsigned long lastUpdate;
+};
+
+class TempSensors {
+ public:
+  TempSensors(int pin) : lastUpdate(0), oneWire(pin), sensors(&oneWire) {
+    }
+
+  void setup() { 
+  Serial.print("Locating devices...");
+  sensors.begin();
+  Serial.print("Found ");
+  Serial.print(sensors.getDeviceCount(), DEC);
+  Serial.println(" devices.");
+
+  }
+
+  bool update() {
+    if (millis() - lastUpdate < UPTIME_UPDATE_PERIODE) {
+      return false;
+    }
+
+    lastUpdate = millis();
+    return true;
+  }
+
+
+ private:
+  unsigned long lastUpdate;
+  OneWire oneWire;
+  DallasTemperature sensors;
 };
