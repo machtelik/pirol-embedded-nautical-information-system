@@ -1,8 +1,8 @@
 #pragma once
 
 #include <DHT.h>
-#include <OneWire.h>
 #include <DallasTemperature.h>
+#include <OneWire.h>
 
 #define ANALOG_VALUE_TO_VOLTAGE 30  // 1 digit = 0,03V (30,0mV)
 
@@ -10,7 +10,6 @@
 #define TEMP_HUM_UPDATE_PERIODE 5000
 #define UPTIME_UPDATE_PERIODE 5000
 #define TEMP_UPDATE_PERIODE 5000
-
 
 class VoltageSensor {
  public:
@@ -30,7 +29,7 @@ class VoltageSensor {
       return false;
     }
 
-    if (!immediate_update || millis() - lastUpdate < VOLTAGE_UPDATE_PERIODE) {
+    if (!immediate_update && millis() - lastUpdate < VOLTAGE_UPDATE_PERIODE) {
       return false;
     }
 
@@ -56,6 +55,8 @@ class TempHumSensor {
  public:
   TempHumSensor(int pin)
       : is_setup(false), dht(pin, DHT22), temp(0.0), hum(0.0), lastUpdate(0) {}
+
+  void reset() { is_setup = false; }
 
   void setup() {
     if (is_setup) {
@@ -122,10 +123,17 @@ class UptimeSensor {
 
 class TempSensors {
  public:
-  TempSensors(int pin) : is_setup(false), lastUpdate(0), oneWire(pin), sensors(&oneWire) {
-    }
+  TempSensors(int pin)
+      : is_setup(false), lastUpdate(0), oneWire(pin), sensors(&oneWire) {}
 
-  void setup() { 
+  void reset() { is_setup = false; }
+
+  void setup() {
+    if (is_setup) {
+      return;
+    }
+    is_setup = true;
+
     Serial.print("Locating devices...");
     sensors.begin();
     Serial.print("Found ");
@@ -134,10 +142,10 @@ class TempSensors {
   }
 
   bool update() {
-    if(!is_setup) {
+    if (!is_setup) {
       return false;
     }
-    
+
     if (millis() - lastUpdate < UPTIME_UPDATE_PERIODE) {
       return false;
     }
@@ -145,7 +153,6 @@ class TempSensors {
     lastUpdate = millis();
     return true;
   }
-
 
  private:
   bool is_setup;

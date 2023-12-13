@@ -1,0 +1,20 @@
+#pragma once
+
+// PINs
+#define INPUT_VOLATGE_PIN A0
+#define EXTERNAL_5V_POWER_PIN A1
+#define TEMP_HUM_SENSOR_PIN 3
+#define TEMP_PIN 5
+#define TCA_RESET_PIN 7
+
+#define EXTERNAL_SENSOR_VOLTAGE_HIGH 4500
+
+// i2c bus addresses
+#define TCA_ADDRESS 0x70
+#define DISPLAY_ADDRESS_0 0x22
+#define DISPLAY_ADDRESS_1 0x23
+#define DISPLAY_ADDRESS_2 0x25
+#define DISPLAY_ADDRESS_3 0x26
+#define DISPLAY_ADDRESS_4 0x27
+
+#define TCA_DISPLAY_CHANNEL 2

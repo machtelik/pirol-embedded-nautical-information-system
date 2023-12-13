@@ -9,8 +9,9 @@
 
 class Display {
  public:
-  Display(uint8_t addr)
+  Display(uint8_t addr, TCA& tca)
       : is_setup(false),
+        tca(tca),
         lcd(addr, DISPLAY_CHAR_COUNT, DISPLAY_LINE_COUNT),
         lastUpdate(0),
         needsRefresh(),
@@ -22,12 +23,17 @@ class Display {
 
   void reset() {
     is_setup = false;
+    for (int i = 0; i < DISPLAY_LINE_COUNT; ++i) {
+      needsRefresh[i] = true;
+    }
   }
 
   void setup() {
     if (is_setup) {
       return;
     }
+
+    tca.setTCAChannel(TCA_DISPLAY_CHANNEL);
 
     lcd.init();
     lcd.backlight();
@@ -43,6 +49,8 @@ class Display {
     if (millis() - lastUpdate < DISPLAY_UPDATE_PERIODE) {
       return;
     }
+
+    tca.setTCAChannel(TCA_DISPLAY_CHANNEL);
 
     for (int i = 0; i < DISPLAY_LINE_COUNT; ++i) {
       if (!needsRefresh[i]) {
@@ -68,6 +76,7 @@ class Display {
 
  private:
   bool is_setup;
+  TCA& tca;
   LiquidCrystal_I2C lcd;
   unsigned long lastUpdate;
   bool needsRefresh[DISPLAY_LINE_COUNT];
